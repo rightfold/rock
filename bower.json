@@ -1,0 +1,10 @@
+{
+  "name": "rock",
+  "dependencies": {
+    "purescript-prelude": "^2.1.0",
+    "purescript-maps": "^2.0.2",
+    "purescript-maybe": "^2.0.1",
+    "purescript-transformers": "^2.1.0",
+    "purescript-control": "^2.0.0"
+  }
+}

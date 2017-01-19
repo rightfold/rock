@@ -5,6 +5,8 @@
     "purescript-maps": "^2.0.2",
     "purescript-maybe": "^2.0.1",
     "purescript-transformers": "^2.1.0",
-    "purescript-control": "^2.0.0"
+    "purescript-control": "^2.0.0",
+    "purescript-identity": "^2.0.0",
+    "purescript-either": "^2.1.0"
   }
 }

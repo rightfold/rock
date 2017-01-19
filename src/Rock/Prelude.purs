@@ -4,6 +4,6 @@ module Rock.Prelude
   , module Prelude
   ) where
 
-import Data.Either (Either)
-import Data.Maybe (fromMaybe, Maybe(..))
+import Data.Either (Either(..))
+import Data.Maybe (fromMaybe, Maybe(..), maybe)
 import Prelude

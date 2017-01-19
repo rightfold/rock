@@ -11,7 +11,9 @@ module Rock.Syntax
   , alphaEquivalent
 
   , betaReduce
+  , betaReduce'
   , evaluate
+  , betaEquivalent
   ) where
 
 import Control.Monad.Maybe.Trans (MaybeT)
@@ -124,3 +126,9 @@ evaluate n (Let x e1 e2) =
   (Let x <$> evaluate (n - 1) e1 <*> evaluate (n - 1) e2)
   >>= betaReduce' n
 evaluate _ (Typ) = pure Typ
+
+betaEquivalent :: ∀ m. (MonadSupply Name m) => Int -> Term -> Term -> MaybeT m Boolean
+betaEquivalent n t u = do
+  t' <- evaluate n t
+  u' <- evaluate n u
+  alphaEquivalent t' u'

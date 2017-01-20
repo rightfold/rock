@@ -55,14 +55,29 @@ prettyName (SourceName x) = x
 prettyName (UniqueName i) = "$" <> show i
 
 prettyTerm :: Term -> String
-prettyTerm (Var x) = prettyName x
-prettyTerm (App e1 e2) = "(" <> prettyTerm e1 <> ") (" <> prettyTerm e2 <> ")"
-prettyTerm (Abs x t e) = "λ(" <> prettyName x <> " : " <> prettyTerm t <> ") -> " <> prettyTerm e
-prettyTerm (Pii x t e) = "Π(" <> prettyName x <> " : " <> prettyTerm t <> ") -> " <> prettyTerm e
-prettyTerm (Let x e1 e2) = "let " <> prettyName x <> " = " <> prettyTerm e1 <> " in " <> prettyTerm e2
-prettyTerm (Typ) = "⋆"
-prettyTerm (Lservice) = "Lservice"
-prettyTerm (Service) = "(↝)"
+prettyTerm = go
+  where
+  go (Var x) = prettyName x
+  go (App e1 e2) = parens 2 e1 <> " " <> parens 1 e2
+  go (Abs x t e) = "λ(" <> prettyName x <> " : " <> parens 3 t <> ") -> " <> parens 3 e
+  go (Pii x t e) = "Π(" <> prettyName x <> " : " <> parens 3 t <> ") -> " <> parens 3 e
+  go (Let x e1 e2) = "let " <> prettyName x <> " = " <> parens 3 e1 <> " in " <> parens 3 e2
+  go (Typ) = "⋆"
+  go (Lservice) = "Lservice"
+  go (Service) = "(↝)"
+
+  parens l t
+    | level t > l = "(" <> go t <> ")"
+    | otherwise   = go t
+
+  level (Var _) = 1
+  level (App _ _) = 2
+  level (Abs _ _ _) = 3
+  level (Pii _ _ _) = 3
+  level (Let _ _ _) = 3
+  level (Typ) = 1
+  level (Lservice) = 1
+  level (Service) = 1
 
 --------------------------------------------------------------------------------
 

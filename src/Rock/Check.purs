@@ -13,7 +13,7 @@ import Control.Monad.Maybe.Trans (runMaybeT)
 import Control.Monad.State.Class (class MonadState)
 import Control.Monad.State.Class as State
 import Control.Monad.State.Trans (evalStateT, StateT)
-import Control.Monad.Supply.Class (class MonadSupply, fresh)
+import Control.Monad.Supply.Class (class MonadSupply)
 import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map as Map
@@ -83,8 +83,3 @@ infer g (Let x e1 e2) = do
   let g' = Map.insert x {definition: e1, type: e1Type} g
   infer g' e2
 infer _ (Typ) = pure Typ
-infer _ (Lservice) = pure Typ
-infer _ (Service) = do
-  a' <- fresh
-  b' <- fresh
-  pure $ Pii a' Typ (Pii b' Typ Lservice)

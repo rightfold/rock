@@ -41,10 +41,6 @@ data Term
   | Let Name Term Term
   | Typ
 
-  -- ignore unless you're @wires
-  | Lservice
-  | Service
-
 derive instance eqTerm :: Eq Term
 derive instance ordTerm :: Ord Term
 
@@ -63,8 +59,6 @@ prettyTerm = go
   go (Pii x t e) = "Π(" <> prettyName x <> " : " <> parens 3 t <> ") -> " <> parens 3 e
   go (Let x e1 e2) = "let " <> prettyName x <> " = " <> parens 3 e1 <> " in " <> parens 3 e2
   go (Typ) = "⋆"
-  go (Lservice) = "Lservice"
-  go (Service) = "(↝)"
 
   parens l t
     | level t > l = "(" <> go t <> ")"
@@ -76,8 +70,6 @@ prettyTerm = go
   level (Pii _ _ _) = 3
   level (Let _ _ _) = 3
   level (Typ) = 1
-  level (Lservice) = 1
-  level (Service) = 1
 
 --------------------------------------------------------------------------------
 
@@ -97,8 +89,6 @@ substitute x t1 (Let t2X t2E1 t2E2)
   | t2X == x  = Let t2X (substitute x t1 t2E1) t2E2
   | otherwise = Let t2X (substitute x t1 t2E1) (substitute x t1 t2E2)
 substitute _ _  (Typ) = Typ
-substitute _ _  (Lservice) = Lservice
-substitute _ _  (Service) = Service
 
 --------------------------------------------------------------------------------
 
@@ -118,8 +108,6 @@ alphaRename = go Map.empty
     x' <- fresh
     Let x' <$> go g e1 <*> go (Map.insert x x' g) e2
   go _ (Typ) = pure Typ
-  go _ (Lservice) = pure Lservice
-  go _ (Service) = pure Service
 
 alphaEquivalent :: ∀ m. (MonadSupply Name m) => Term -> Term -> m Boolean
 alphaEquivalent t u = (==) <$> sneak (alphaRename t) <*> sneak (alphaRename u)
@@ -152,8 +140,6 @@ evaluate n (Let x e1 e2) =
   (Let x <$> evaluate (n - 1) e1 <*> evaluate (n - 1) e2)
   >>= betaReduce' n
 evaluate _ (Typ) = pure Typ
-evaluate _ (Lservice) = pure Lservice
-evaluate _ (Service) = pure Service
 
 evaluate' :: ∀ m. (MonadSupply Name m) => Int -> Int -> Term -> MaybeT m Term
 evaluate' n _ _ | n <= 0 = empty

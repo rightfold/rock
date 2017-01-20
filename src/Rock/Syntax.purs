@@ -13,6 +13,7 @@ module Rock.Syntax
   , betaReduce
   , betaReduce'
   , evaluate
+  , evaluate'
   , betaEquivalent
   ) where
 
@@ -139,8 +140,16 @@ evaluate _ (Typ) = pure Typ
 evaluate _ (Lservice) = pure Lservice
 evaluate _ (Service) = pure Service
 
+evaluate' :: ∀ m. (MonadSupply Name m) => Int -> Int -> Term -> MaybeT m Term
+evaluate' n _ _ | n <= 0 = empty
+evaluate' n m t = do
+  t' <- evaluate m t
+  if t' == t
+    then pure t'
+    else evaluate' (n - 1) m t'
+
 betaEquivalent :: ∀ m. (MonadSupply Name m) => Int -> Term -> Term -> MaybeT m Boolean
 betaEquivalent n t u = do
-  t' <- evaluate n t
-  u' <- evaluate n u
+  t' <- evaluate' n n t
+  u' <- evaluate' n n u
   alphaEquivalent t' u'

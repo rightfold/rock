@@ -1,4 +1,4 @@
-# rock
+# Rock
 
 1. `MonadSupply` is basically `Reader` except every time you ask you get a unique new value.
 

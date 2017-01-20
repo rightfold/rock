@@ -15,6 +15,9 @@ main = do
   example $ app (abs "t" typ (abs "x" (var "t") (var "x"))) (pii "x" typ typ)
   example $ app (app (abs "t" typ (abs "x" (var "t") (var "x"))) (pii "x" typ typ)) (abs "x" typ (var "x"))
   example $ app (app (abs "t" typ (abs "x" (var "t") (var "x"))) (pii "x" typ typ)) (abs "y" typ (var "y"))
+  example $ Lservice
+  example $ Service
+  example $ abs "t" typ (abs "u" typ (app (app Service (var "t")) (var "u")))
   where
   example e = do
     log $ prettyTerm e

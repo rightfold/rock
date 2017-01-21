@@ -17,6 +17,7 @@ main = do
   example $ app (app (abs "t" typ (abs "x" (var "t") (var "x"))) (pii "x" typ typ)) (abs "y" typ (var "y"))
   example $ app (app (abs "t" typ (abs "x" (var "t") (var "x"))) (var "bool")) (lit (Bool true))
   example $ le_ "b" (var "bool") (app (abs "x" (var "b") (var "x")) (lit (Bool true)))
+  example $ le_ "bool" (var "bool") (app (abs "x" (var "bool") (var "x")) (lit (Bool true)))
   example $ lit (Double (wrap 3.14))
   where
   example e = do

@@ -18,7 +18,7 @@ import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Rock.Prelude
-import Rock.Syntax (alphaRename, betaEquivalent, Literal(..), Name(..), substitute, substituteAll', Term(..))
+import Rock.Syntax (alphaRename, betaEquivalent, evaluate, Literal(..), Name(..), substitute, substituteAll', Term(..))
 
 --------------------------------------------------------------------------------
 
@@ -85,7 +85,10 @@ infer g (Pii x t e) = do
   pure Typ
 infer g (Let x e1 e2) = do
   e1Type <- infer g e1
-  e1' <- alphaRename e1
+  e1' <- do
+    g' <- traverse (\e -> alphaRename e.definition <#> e {definition = _}) g
+    let e1' = substituteAll' (map _.definition <$> Map.toList g') e1
+    fromMaybe e1' <$> runMaybeT (evaluate recursionDepth e1')
   let g' = Map.insert x {definition: e1', type: e1Type} g
   infer g' e2
 infer _ (Lit (Bool _))   = pure $ Var (IntrinsicName "bool")

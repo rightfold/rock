@@ -18,7 +18,7 @@ import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Rock.Prelude
-import Rock.Syntax (alphaRename, betaEquivalent, Literal(..), Name(..), substitute, substituteAll, Term(..))
+import Rock.Syntax (alphaRename, betaEquivalent, Literal(..), Name(..), substitute, substituteAll', Term(..))
 
 --------------------------------------------------------------------------------
 
@@ -27,7 +27,11 @@ recursionDepth = 128
 
 --------------------------------------------------------------------------------
 
-data Error = Error
+data Error
+  = NameError Name
+  | MismatchError Term Term
+  | RecursionError
+  | PiError Term
 
 --------------------------------------------------------------------------------
 
@@ -57,19 +61,19 @@ runCheck (Check action) = case runExceptT (evalStateT action 0) of Identity r ->
 --------------------------------------------------------------------------------
 
 infer :: Map Name {definition :: Term, type :: Term} -> Term -> Check Term
-infer g (Var x) = maybe (throwError Error) (pure <<< _.type) (Map.lookup x g)
+infer g (Var x) = maybe (throwError $ NameError x) (pure <<< _.type) (Map.lookup x g)
 infer g (App e1 e2) = do
   g' <- traverse (\e -> alphaRename e.definition <#> e {definition = _}) g
-  e1Type <- substituteAll (map _.definition <$> Map.toList g') <$> infer g e1
-  e2Type <- substituteAll (map _.definition <$> Map.toList g') <$> infer g e2
+  e1Type <- substituteAll' (map _.definition <$> Map.toList g') <$> infer g e1
+  e2Type <- substituteAll' (map _.definition <$> Map.toList g') <$> infer g e2
   case e1Type of
     Pii x t e -> do
       infer g' t
       runMaybeT (betaEquivalent recursionDepth t e2Type) >>= case _ of
         Just true  -> pure $ substitute x e2 e
-        Just false -> throwError Error
-        Nothing    -> throwError Error
-    _ -> throwError Error
+        Just false -> throwError $ MismatchError t e2Type
+        Nothing    -> throwError $ RecursionError
+    _ -> throwError $ PiError e1Type
 infer g (Abs x t e) = do
   infer g t
   let g' = Map.insert x {definition: Var x, type: t} g

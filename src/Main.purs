@@ -5,9 +5,9 @@ module Main
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Map as Map
-import Rock.Check (infer, runCheck)
+import Rock.Check (Error(..), infer, runCheck)
 import Rock.Prelude
-import Rock.Syntax (Literal(..), Name(..), prettyTerm, Term(..))
+import Rock.Syntax (Literal(..), Name(..), prettyName, prettyTerm, Term(..))
 
 main :: ∀ eff. Eff (console :: CONSOLE | eff) Unit
 main = do
@@ -16,12 +16,16 @@ main = do
   example $ app (app (abs "t" typ (abs "x" (var "t") (var "x"))) (pii "x" typ typ)) (abs "x" typ (var "x"))
   example $ app (app (abs "t" typ (abs "x" (var "t") (var "x"))) (pii "x" typ typ)) (abs "y" typ (var "y"))
   example $ app (app (abs "t" typ (abs "x" (var "t") (var "x"))) (var "bool")) (lit (Bool true))
+  example $ le_ "b" (var "bool") (app (abs "x" (var "b") (var "x")) (lit (Bool true)))
   where
   example e = do
     log $ prettyTerm e
     case runCheck (infer prelude e) of
       Right t -> log $ "  : " <> prettyTerm t
-      Left  _ -> log "TYPE ERROR"
+      Left (NameError n)         -> log $ "NAME ERROR\n  " <> prettyName n
+      Left (MismatchError t1 t2) -> log $ "MISTMATCH ERROR\n  " <> prettyTerm t1 <> "\n  " <> prettyTerm t2
+      Left (RecursionError)      -> log $ "RECURSION ERROR"
+      Left (PiError t)           -> log $ "PI ERROR\n  " <> prettyTerm t
     log "----------------------------------------"
   prelude =
     Map.empty
@@ -35,5 +39,6 @@ main = do
   app e1 e2 = App e1 e2
   abs x t e = Abs (SourceName x) t e
   pii x t e = Pii (SourceName x) t e
+  le_ x e1 e2 = Let (SourceName x) e1 e2
   lit l = Lit l
   typ = Typ

@@ -9,6 +9,7 @@ module Rock.Syntax
 
   , substitute
   , substituteAll
+  , substituteAll'
 
   , alphaRename
   , alphaEquivalent
@@ -114,6 +115,13 @@ substitute _ _  (Typ) = Typ
 
 substituteAll :: ∀ f. (Foldable f) => f (Tuple Name Term) -> Term -> Term
 substituteAll f t = foldr (uncurry substitute) t f
+
+substituteAll' :: ∀ f. (Foldable f) => f (Tuple Name Term) -> Term -> Term
+substituteAll' f t = do
+  let t' = substituteAll f t
+  if t' == t
+    then t'
+    else substituteAll' f t'
 
 --------------------------------------------------------------------------------
 

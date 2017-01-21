@@ -56,8 +56,8 @@ runCheck (Check action) = case runExceptT (evalStateT action 0) of Identity r ->
 
 --------------------------------------------------------------------------------
 
-infer :: Map Name {definition :: Term, type :: Term} -> Term -> Check Term
-infer g (Var x) = maybe (throwError Error) (pure <<< _.type) (Map.lookup x g)
+infer :: Map Name Term -> Term -> Check Term
+infer g (Var x) = maybe (throwError Error) pure (Map.lookup x g)
 infer g (App e1 e2) = do
   e1Type <- infer g e1
   e2Type <- infer g e2
@@ -71,15 +71,15 @@ infer g (App e1 e2) = do
     _ -> throwError Error
 infer g (Abs x t e) = do
   infer g t
-  let g' = Map.insert x {definition: Var x, type: t} g
+  let g' = Map.insert x t g
   Pii x t <$> infer g' e
 infer g (Pii x t e) = do
   infer g t
-  let g' = Map.insert x {definition: Var x, type: t} g
+  let g' = Map.insert x t g
   infer g' e
   pure Typ
 infer g (Let x e1 e2) = do
   e1Type <- infer g e1
-  let g' = Map.insert x {definition: e1, type: e1Type} g
+  let g' = Map.insert x e1Type g
   infer g' e2
 infer _ (Typ) = pure Typ

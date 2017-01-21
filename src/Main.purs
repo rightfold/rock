@@ -24,9 +24,9 @@ main = do
     log "----------------------------------------"
   prelude =
     Map.empty
-    # Map.insert (SourceName "bool")   {definition: var "bool", type: Typ}
-    # Map.insert (SourceName "int")    {definition: var "int", type: Typ}
-    # Map.insert (SourceName "option") {definition: var "option", type: pii "x" Typ Typ}
+    # Map.insert (SourceName "bool")   Typ
+    # Map.insert (SourceName "int")    Typ
+    # Map.insert (SourceName "option") (pii "x" Typ Typ)
   var x = Var (SourceName x)
   app e1 e2 = App e1 e2
   abs x t e = Abs (SourceName x) t e

@@ -5,7 +5,9 @@ module Main
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Map as Map
+import Language.ECMAScript.AST as E
 import Rock.Check (Error(..), infer, runCheck)
+import Rock.Codegen (codegenTerm)
 import Rock.Prelude
 import Rock.Syntax (Literal(..), Name(..), prettyName, prettyTerm, Term(..))
 
@@ -23,7 +25,9 @@ main = do
   example e = do
     log $ prettyTerm e
     case runCheck (infer prelude e) of
-      Right t -> log $ "  : " <> prettyTerm t
+      Right t -> do
+        log $ "  : " <> prettyTerm t
+        log $ E.prettyExpression $ codegenTerm e
       Left (NameError n)         -> log $ "NAME ERROR\n  " <> prettyName n
       Left (MismatchError t1 t2) -> log $ "MISTMATCH ERROR\n  " <> prettyTerm t1 <> "\n  " <> prettyTerm t2
       Left (RecursionError)      -> log $ "RECURSION ERROR"

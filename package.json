@@ -1,0 +1,6 @@
+{
+  "name": "rock",
+  "dependencies": {
+    "escodegen": "^1.8.1"
+  }
+}

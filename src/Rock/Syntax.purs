@@ -26,6 +26,7 @@ import Control.Monad.Supply.Class (fresh, class MonadSupply, sneak)
 import Control.Plus (empty)
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Number.ReflNaN (ReflNaN)
 import Rock.Prelude
 
 --------------------------------------------------------------------------------
@@ -53,6 +54,7 @@ derive instance ordTerm :: Ord Term
 data Literal
   = Bool Boolean
   | Int Int
+  | Double ReflNaN
   | String String
 
 derive instance eqLiteral :: Eq Literal
@@ -91,6 +93,7 @@ prettyTerm = go
 prettyLiteral :: Literal -> String
 prettyLiteral (Bool b)   = if b then "true" else "false"
 prettyLiteral (Int i)    = show i
+prettyLiteral (Double n) = show (unwrap n)
 prettyLiteral (String s) = show s
 
 --------------------------------------------------------------------------------

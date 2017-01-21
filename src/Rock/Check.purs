@@ -90,5 +90,6 @@ infer g (Let x e1 e2) = do
   infer g' e2
 infer _ (Lit (Bool _))   = pure $ Var (IntrinsicName "bool")
 infer _ (Lit (Int _))    = pure $ Var (IntrinsicName "int")
+infer _ (Lit (Double _)) = pure $ Var (IntrinsicName "double")
 infer _ (Lit (String _)) = pure $ Var (IntrinsicName "string")
 infer _ (Typ) = pure Typ

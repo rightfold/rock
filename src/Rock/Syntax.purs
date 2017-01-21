@@ -1,11 +1,14 @@
 module Rock.Syntax
   ( Name(..)
   , Term(..)
+  , Literal(..)
 
   , prettyName
   , prettyTerm
+  , prettyLiteral
 
   , substitute
+  , substituteAll
 
   , alphaRename
   , alphaEquivalent
@@ -29,6 +32,7 @@ import Rock.Prelude
 data Name
   = SourceName String
   | UniqueName Int
+  | IntrinsicName String
 
 derive instance eqName :: Eq Name
 derive instance ordName :: Ord Name
@@ -39,16 +43,26 @@ data Term
   | Abs Name Term Term
   | Pii Name Term Term
   | Let Name Term Term
+  | Lit Literal
   | Typ
 
 derive instance eqTerm :: Eq Term
 derive instance ordTerm :: Ord Term
+
+data Literal
+  = Bool Boolean
+  | Int Int
+  | String String
+
+derive instance eqLiteral :: Eq Literal
+derive instance ordLiteral :: Ord Literal
 
 --------------------------------------------------------------------------------
 
 prettyName :: Name -> String
 prettyName (SourceName x) = x
 prettyName (UniqueName i) = "$" <> show i
+prettyName (IntrinsicName x) = "#" <> x
 
 prettyTerm :: Term -> String
 prettyTerm = go
@@ -58,6 +72,7 @@ prettyTerm = go
   go (Abs x t e) = "λ(" <> prettyName x <> " : " <> parens 3 t <> ") -> " <> parens 3 e
   go (Pii x t e) = "Π(" <> prettyName x <> " : " <> parens 3 t <> ") -> " <> parens 3 e
   go (Let x e1 e2) = "let " <> prettyName x <> " = " <> parens 3 e1 <> " in " <> parens 3 e2
+  go (Lit l) = prettyLiteral l
   go (Typ) = "⋆"
 
   parens l t
@@ -69,7 +84,13 @@ prettyTerm = go
   level (Abs _ _ _) = 3
   level (Pii _ _ _) = 3
   level (Let _ _ _) = 3
+  level (Lit _) = 1
   level (Typ) = 1
+
+prettyLiteral :: Literal -> String
+prettyLiteral (Bool b)   = if b then "true" else "false"
+prettyLiteral (Int i)    = show i
+prettyLiteral (String s) = show s
 
 --------------------------------------------------------------------------------
 
@@ -88,7 +109,11 @@ substitute x t1 (Pii t2X t2T t2E)
 substitute x t1 (Let t2X t2E1 t2E2)
   | t2X == x  = Let t2X (substitute x t1 t2E1) t2E2
   | otherwise = Let t2X (substitute x t1 t2E1) (substitute x t1 t2E2)
+substitute _ _  (Lit l) = Lit l
 substitute _ _  (Typ) = Typ
+
+substituteAll :: ∀ f. (Foldable f) => f (Tuple Name Term) -> Term -> Term
+substituteAll f t = foldr (uncurry substitute) t f
 
 --------------------------------------------------------------------------------
 
@@ -107,6 +132,7 @@ alphaRename = go Map.empty
   go g (Let x e1 e2) = do
     x' <- fresh
     Let x' <$> go g e1 <*> go (Map.insert x x' g) e2
+  go _ (Lit l) = pure (Lit l)
   go _ (Typ) = pure Typ
 
 alphaEquivalent :: ∀ m. (MonadSupply Name m) => Term -> Term -> m Boolean
@@ -139,6 +165,7 @@ evaluate n (Pii x t e) =
 evaluate n (Let x e1 e2) =
   (Let x <$> evaluate (n - 1) e1 <*> evaluate (n - 1) e2)
   >>= betaReduce' n
+evaluate _ (Lit l) = pure (Lit l)
 evaluate _ (Typ) = pure Typ
 
 evaluate' :: ∀ m. (MonadSupply Name m) => Int -> Int -> Term -> MaybeT m Term

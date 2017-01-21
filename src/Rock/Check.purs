@@ -18,7 +18,7 @@ import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Rock.Prelude
-import Rock.Syntax (betaEquivalent, Name(..), substitute, Term(..))
+import Rock.Syntax (alphaRename, betaEquivalent, Literal(..), Name(..), substitute, substituteAll, Term(..))
 
 --------------------------------------------------------------------------------
 
@@ -56,14 +56,15 @@ runCheck (Check action) = case runExceptT (evalStateT action 0) of Identity r ->
 
 --------------------------------------------------------------------------------
 
-infer :: Map Name Term -> Term -> Check Term
-infer g (Var x) = maybe (throwError Error) pure (Map.lookup x g)
+infer :: Map Name {definition :: Term, type :: Term} -> Term -> Check Term
+infer g (Var x) = maybe (throwError Error) (pure <<< _.type) (Map.lookup x g)
 infer g (App e1 e2) = do
-  e1Type <- infer g e1
-  e2Type <- infer g e2
+  g' <- traverse (\e -> alphaRename e.definition <#> e {definition = _}) g
+  e1Type <- substituteAll (map _.definition <$> Map.toList g') <$> infer g e1
+  e2Type <- substituteAll (map _.definition <$> Map.toList g') <$> infer g e2
   case e1Type of
     Pii x t e -> do
-      infer g t
+      infer g' t
       runMaybeT (betaEquivalent recursionDepth t e2Type) >>= case _ of
         Just true  -> pure $ substitute x e2 e
         Just false -> throwError Error
@@ -71,15 +72,19 @@ infer g (App e1 e2) = do
     _ -> throwError Error
 infer g (Abs x t e) = do
   infer g t
-  let g' = Map.insert x t g
+  let g' = Map.insert x {definition: Var x, type: t} g
   Pii x t <$> infer g' e
 infer g (Pii x t e) = do
   infer g t
-  let g' = Map.insert x t g
+  let g' = Map.insert x {definition: Var x, type: t} g
   infer g' e
   pure Typ
 infer g (Let x e1 e2) = do
   e1Type <- infer g e1
-  let g' = Map.insert x e1Type g
+  e1' <- alphaRename e1
+  let g' = Map.insert x {definition: e1', type: e1Type} g
   infer g' e2
+infer _ (Lit (Bool _))   = pure $ Var (IntrinsicName "bool")
+infer _ (Lit (Int _))    = pure $ Var (IntrinsicName "int")
+infer _ (Lit (String _)) = pure $ Var (IntrinsicName "string")
 infer _ (Typ) = pure Typ

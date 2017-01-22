@@ -21,6 +21,9 @@ main = do
   example $ le_ "b" (var "bool") (app (abs "x" (var "b") (var "x")) (lit (Bool true)))
   example $ le_ "bool" (var "bool") (app (abs "x" (var "bool") (var "x")) (lit (Bool true)))
   example $ lit (Double (wrap 3.14))
+  example $ le_ "void" (app (var "fin") (lit (Int 0))) (app (abs "a" (var "void") (lit (Bool true))) (Fin 0 0))
+  example $ le_ "unit" (app (var "fin") (lit (Int 1))) (app (abs "a" (var "unit") (lit (Bool true))) (Fin 1 0))
+  example $ le_ "unit" (app (var "fin") (lit (Int 1))) (app (abs "a" (var "unit") (lit (Bool true))) (Fin 1 1))
   where
   example e = do
     log $ prettyTerm e
@@ -32,19 +35,23 @@ main = do
       Left (MismatchError t1 t2) -> log $ "MISTMATCH ERROR\n  " <> prettyTerm t1 <> "\n  " <> prettyTerm t2
       Left (RecursionError)      -> log $ "RECURSION ERROR"
       Left (PiError t)           -> log $ "PI ERROR\n  " <> prettyTerm t
+      Left (FinError b n)        -> log $ "FIN ERROR\n  " <> show b <> " > " <> show n
     log "----------------------------------------"
   prelude =
     Map.empty
-    # Map.insert (SourceName "bool")      {definition: Var (IntrinsicName "bool"),   type: Typ}
-    # Map.insert (SourceName "int")       {definition: Var (IntrinsicName "int"),    type: Typ}
-    # Map.insert (SourceName "string")    {definition: Var (IntrinsicName "string"), type: Typ}
-    # Map.insert (IntrinsicName "bool")   {definition: Var (IntrinsicName "bool"),   type: Typ}
-    # Map.insert (IntrinsicName "int")    {definition: Var (IntrinsicName "int"),    type: Typ}
-    # Map.insert (IntrinsicName "string") {definition: Var (IntrinsicName "string"), type: Typ}
+    # Map.insert (SourceName "bool")      {definition: Var (IntrinsicName "bool"),   type: typ}
+    # Map.insert (SourceName "int")       {definition: Var (IntrinsicName "int"),    type: typ}
+    # Map.insert (SourceName "string")    {definition: Var (IntrinsicName "string"), type: typ}
+    # Map.insert (SourceName "fin")       {definition: Var (IntrinsicName "fin"),    type: pii "n" (Var (IntrinsicName "int")) typ}
+    # Map.insert (IntrinsicName "bool")   {definition: Var (IntrinsicName "bool"),   type: typ}
+    # Map.insert (IntrinsicName "int")    {definition: Var (IntrinsicName "int"),    type: typ}
+    # Map.insert (IntrinsicName "string") {definition: Var (IntrinsicName "string"), type: typ}
+    # Map.insert (IntrinsicName "fin")    {definition: Var (IntrinsicName "fin"),    type: pii "n" (Var (IntrinsicName "int")) typ}
   var x = Var (SourceName x)
   app e1 e2 = App e1 e2
   abs x t e = Abs (SourceName x) t e
   pii x t e = Pii (SourceName x) t e
   le_ x e1 e2 = Let (SourceName x) e1 e2
+  fin b n = Fin b n
   lit l = Lit l
   typ = Typ

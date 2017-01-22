@@ -26,6 +26,7 @@ codegenTerm (Let x e1 e2) = E.callExpression f [a]
                                  [E.returnStatement (codegenTerm e2)]
         a = codegenTerm e1
 codegenTerm (Lit l) = codegenLiteral l
+codegenTerm (Fin _ n) = E.intLiteral n
 codegenTerm (Typ) = E.nullLiteral
 
 codegenLiteral :: Literal -> E.Expression

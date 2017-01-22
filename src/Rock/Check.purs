@@ -32,6 +32,7 @@ data Error
   | MismatchError Term Term
   | RecursionError
   | PiError Term
+  | FinError Int Int
 
 --------------------------------------------------------------------------------
 
@@ -95,4 +96,7 @@ infer _ (Lit (Bool _))   = pure $ Var (IntrinsicName "bool")
 infer _ (Lit (Int _))    = pure $ Var (IntrinsicName "int")
 infer _ (Lit (Double _)) = pure $ Var (IntrinsicName "double")
 infer _ (Lit (String _)) = pure $ Var (IntrinsicName "string")
+infer _ (Fin b n)
+  | n < b     = pure $ App (Var (IntrinsicName "fin")) (Lit (Int b))
+  | otherwise = throwError $ FinError b n
 infer _ (Typ) = pure Typ

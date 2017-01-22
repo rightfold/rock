@@ -46,6 +46,7 @@ data Term
   | Pii Name Term Term
   | Let Name Term Term
   | Lit Literal
+  | Fin Int Int
   | Typ
 
 derive instance eqTerm :: Eq Term
@@ -76,6 +77,7 @@ prettyTerm = go
   go (Pii x t e) = "Π(" <> prettyName x <> " : " <> parens 3 t <> ") -> " <> parens 3 e
   go (Let x e1 e2) = "let " <> prettyName x <> " = " <> parens 3 e1 <> " in " <> parens 3 e2
   go (Lit l) = prettyLiteral l
+  go (Fin b n) = "mkfin(" <> show b <> " > " <> show n <> ")"
   go (Typ) = "⋆"
 
   parens l t
@@ -88,6 +90,7 @@ prettyTerm = go
   level (Pii _ _ _) = 3
   level (Let _ _ _) = 3
   level (Lit _) = 1
+  level (Fin _ _) = 1
   level (Typ) = 1
 
 prettyLiteral :: Literal -> String
@@ -114,6 +117,7 @@ substitute x t1 (Let t2X t2E1 t2E2)
   | t2X == x  = Let t2X (substitute x t1 t2E1) t2E2
   | otherwise = Let t2X (substitute x t1 t2E1) (substitute x t1 t2E2)
 substitute _ _  (Lit l) = Lit l
+substitute _ _  (Fin b n) = Fin b n
 substitute _ _  (Typ) = Typ
 
 substituteAll :: ∀ f. (Foldable f) => f (Tuple Name Term) -> Term -> Term
@@ -144,6 +148,7 @@ alphaRename = go Map.empty
     x' <- fresh
     Let x' <$> go g e1 <*> go (Map.insert x x' g) e2
   go _ (Lit l) = pure (Lit l)
+  go _ (Fin b n) = pure (Fin b n)
   go _ (Typ) = pure Typ
 
 alphaEquivalent :: ∀ m. (MonadSupply Name m) => Term -> Term -> m Boolean
@@ -177,6 +182,7 @@ evaluate n (Let x e1 e2) =
   (Let x <$> evaluate (n - 1) e1 <*> evaluate (n - 1) e2)
   >>= betaReduce' n
 evaluate _ (Lit l) = pure (Lit l)
+evaluate _ (Fin b n) = pure (Fin b n)
 evaluate _ (Typ) = pure Typ
 
 evaluate' :: ∀ m. (MonadSupply Name m) => Int -> Int -> Term -> MaybeT m Term
